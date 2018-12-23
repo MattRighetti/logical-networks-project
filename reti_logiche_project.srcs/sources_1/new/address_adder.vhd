@@ -24,6 +24,7 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY address_adder IS
 	PORT (
+	    i_clk: IN STD_LOGIC;
 		X : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
 		Y : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
 		Active: IN STD_LOGIC;
@@ -35,12 +36,14 @@ ARCHITECTURE Behavioral OF address_adder IS
 
 BEGIN
 	
-	PROCESS(Active) IS
+	PROCESS(Active, i_clk) IS
 	BEGIN
 	
-	   IF Active = '1' THEN
-	       Sum <= X + Y;
-	   END IF;
+	   IF rising_edge(i_clk) then
+	       IF Active = '1' THEN
+                  Sum <= X + Y;
+              END IF;
+           END IF;
     
     END PROCESS;
  

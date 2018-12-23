@@ -36,7 +36,7 @@ end adder_8bit;
 architecture Behavioral of adder_8bit is
 
 begin
-
+    
     Sum <= X + Y;
 
 end Behavioral;

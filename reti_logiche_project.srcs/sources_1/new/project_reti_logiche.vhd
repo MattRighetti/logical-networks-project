@@ -64,6 +64,7 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 	COMPONENT address_adder IS
 		PORT 
 		(
+		    i_clk  : IN STD_LOGIC;
 			X      : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
 			Y      : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
 			Active : IN STD_LOGIC := '0';
@@ -77,16 +78,6 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 			X       : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
 			Y       : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
 			Abs_Out : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-		);
-	END COMPONENT;
-
-	COMPONENT adder IS
-		PORT 
-		(
-			X        : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Y        : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Selector : IN STD_LOGIC;
-			Sum      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
 		);
 	END COMPONENT;
 
@@ -114,8 +105,8 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 	SIGNAL Mask_index         : INTEGER;
 
 BEGIN
-	program_counter : address_adder
-	PORT MAP(X => current_address, Y => address_increment, Sum => current_address);
+	--program_counter : address_adder
+	--PORT MAP(i_clk => i_clk, X => current_address, Y => address_increment, Sum => outt);
 	
 	x_module_calculator : abs_calculator
 	PORT MAP(X => point_x, Y => centroid_x, Abs_out => temp_x_sum);
@@ -126,31 +117,25 @@ BEGIN
     manhattan_distance_calculator : adder_8bit
     PORT MAP(X => temp_x_sum, Y => temp_y_sum, Sum => manhattan_distance);
 
-    o_address_update : PROCESS (current_address)
-    BEGIN
-        o_address  <= current_address;
-        Sum_active <= '0' AFTER 5ns;
-    END PROCESS o_address_update;
-
     centroid_calculator : PROCESS (i_clk, i_rst, i_start, State)
-    
     BEGIN
         IF i_rst = '1' THEN
             State <= RST;
         END IF;
     
-        IF rising_edge(i_clk) THEN
+        IF falling_edge(i_clk) THEN
             CASE State IS
     
                 WHEN RST => 
                     Mask_index         <= 0;
-                    o_address          <= (4 => '1', OTHERS => '0'); -- Indirizzo settato alla cella della X del Punto Principale
-                    current_address    <= (4 => '1', OTHERS => '0');
+                    o_address          <= "0000000000010001"; -- Indirizzo settato alla cella della X del Punto Principale
+                    current_address    <= "0000000000010001";
                     output_mask        <= (OTHERS => '0');
                     manhattan_distance <= (OTHERS => '0');
                     minimum_distance   <= (OTHERS => '0');
                     temp_x_sum         <= (OTHERS => '0');
                     temp_y_sum         <= (OTHERS => '0');
+                    State <= S0;
     
                 WHEN S0 => 
                     IF i_start = '1' THEN
@@ -161,47 +146,52 @@ BEGIN
      
                 WHEN S1 => 
                     point_x    <= i_data;
-                    Sum_active <= '1';
+                    o_address  <= "0000000000010010";
                     State      <= S2;
      
     
                 WHEN S2 => 
                     point_y         <= i_data;
-                    current_address <= (OTHERS => '0'); -- Indirizzo 19 per leggere la maschera
+                    o_address <= (OTHERS => '0'); -- Indirizzo 19 per leggere la maschera
+                    current_address <= (OTHERS => '0');
                     State           <= S3;
     
                 WHEN S3 => 
                     centroid_mask <= i_data;
-                    Sum_active    <= '1';
+                    o_address <= current_address + "0000000000000001";
+                    current_address <= current_address + "0000000000000001";
                     State         <= S4;
     
                 WHEN S4 => 
-                    WHILE Mask_index < 8 LOOP
-                    IF centroid_mask(Mask_index) = '1' THEN
+                    --WHILE Mask_index < 8 LOOP
+                    IF centroid_mask(0) = '1' THEN
                         centroid_x <= i_data;
-                        Sum_active <= '1';
+                        o_address <= current_address + "0000000000000001";
+                        current_address <= current_address + "0000000000000001";
                         State      <= S5;
-                        Mask_index <= Mask_index + 1;
+                        --Mask_index <= Mask_index + 1;
                     ELSE
                         output_mask(Mask_index) <= '0';
+                        o_address <= current_address + "0000000000000010";
                         current_address         <= current_address + "0000000000000010";
                         Mask_index              <= Mask_index + 1;
                     END IF;
-            END LOOP;
-            State <= S7;
+            --END LOOP;
+            --State <= S7;
     
                 WHEN S5 => 
                 centroid_y <= i_data;
-                Sum_active <= '1';
                 State      <= S6;
     
                 WHEN S6 => 
                 IF manhattan_distance < minimum_distance THEN
                     output_mask      <= (Mask_index => '1', OTHERS => '0');
                     minimum_distance <= manhattan_distance;
+                    State <= S7;
                 ELSE
                     IF (manhattan_distance = minimum_distance) THEN
                         output_mask(Mask_index) <= '1';
+                        State <= S7;
                     END IF;
                 END IF;
      
