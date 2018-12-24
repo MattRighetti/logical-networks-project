@@ -53,23 +53,6 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 	S11
 	);
 
-	COMPONENT adder_8bit IS
-		PORT (
-			X : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Y : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Sum : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-		);
-	END COMPONENT;
-
-	COMPONENT abs_calculator IS
-		PORT (
-			CLK : IN STD_LOGIC;
-			X : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Y : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			Abs_Out : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-		);
-	END COMPONENT;
-
 	SIGNAL State : State_type := RST;
 
 	SIGNAL centroid_mask : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0');
@@ -153,14 +136,14 @@ BEGIN
                             index <= shift_left(index, 1);
                         END IF;
                      ELSE
+					 	o_address <= (0 => '1', 1 => '1', 4 => '1', OTHERS => '0');
+						current_address <= (0 => '1', 1 => '1', 4 => '1', OTHERS => '0');
+						o_we <= '1';
                         State <= S9;
                      END IF;
  
 				WHEN S5 => 
 					centroid_y <= i_data;
-					State <= S6;
- 
-				WHEN S6 => 
 					IF (centroid_x < point_x) THEN
 						temp_x_sum <= point_x - centroid_x;
 					ELSE
@@ -170,7 +153,9 @@ BEGIN
 							temp_x_sum <= (OTHERS => '0');
 						END IF;
 					END IF;
+					State <= S6;
  
+				WHEN S6 => 
 					IF (centroid_y < point_y) THEN
 						temp_y_sum <= point_y - centroid_y;
 					ELSE IF (centroid_y > point_y) THEN
@@ -187,7 +172,7 @@ BEGIN
  
 				WHEN S8 => 
 				IF manhattan_distance < minimum_distance THEN
-				    output_mask <= "00000000";
+				    output_mask <= output_mask AND (OTHERS=>'0');
 					output_mask <= output_mask OR index;
 					minimum_distance <= manhattan_distance;
 					o_address <= current_address + "0000000000000001";
@@ -213,16 +198,11 @@ BEGIN
 				END IF;
  
 				WHEN S9 => 
-				current_address <= (0 => '1', 1 => '1', 4 => '1', OTHERS => '0');
-				o_we <= '1';
+				o_data <= std_logic_vector(output_mask);
+				o_done <= '1';
 				State <= S10;
  
 				WHEN S10 => 
-				o_data <= std_logic_vector(output_mask);
-				o_done <= '1';
-				State <= S11;
- 
-				WHEN S11 => 
 				o_done <= '0';
 				o_en <= '0';
 				o_we <= '0';
