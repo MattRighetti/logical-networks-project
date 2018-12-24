@@ -225,6 +225,7 @@ BEGIN
 				WHEN S11 => 
 				o_done <= '0';
 				o_en <= '0';
+				o_we <= '0';
 				State <= RST;
  
 		END CASE;
