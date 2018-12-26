@@ -25,7 +25,7 @@ USE ieee.std_logic_unsigned.ALL;
 ENTITY project_tb2 IS
 END project_tb2;
 ARCHITECTURE projecttb OF project_tb2 IS
-	CONSTANT c_CLOCK_PERIOD : TIME := 1 us;
+	CONSTANT c_CLOCK_PERIOD : TIME := 100ns;
 	SIGNAL tb_done : std_logic;
 	SIGNAL mem_address : std_logic_vector (15 DOWNTO 0) := (OTHERS => '0');
 	SIGNAL tb_rst : std_logic := '0';
