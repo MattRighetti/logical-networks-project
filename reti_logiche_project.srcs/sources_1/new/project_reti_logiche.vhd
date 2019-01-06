@@ -52,7 +52,8 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 	S8, 
 	S9, 
 	S10,
-	S11
+	S11,
+	S12
 	);
  
 	SIGNAL next_state : state_type := INIT;
@@ -68,19 +69,19 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 
 	SIGNAL temp_x_sum : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0');
 	SIGNAL temp_y_sum : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0');
-	SIGNAL manhattan_distance : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0');
- 
-	SIGNAL stop_computing : std_logic := '0';
+	SIGNAL manhattan_distance : std_logic_vector(8 DOWNTO 0) := (OTHERS => '0');
+	
+	SIGNAL temp_x_sum_nine_bit : std_logic_vector(8 DOWNTO 0) := (OTHERS => '0');
+	SIGNAL temp_y_sum_nine_bit : std_logic_vector(8 DOWNTO 0) := (OTHERS => '0');
 
-	SIGNAL minimum_distance : std_logic_vector(7 DOWNTO 0) := (OTHERS => '1');
+	SIGNAL minimum_distance : std_logic_vector(8 DOWNTO 0) := (OTHERS => '1');
 
 	SIGNAL output_mask : UNSIGNED(7 DOWNTO 0) := (OTHERS => '0');
 	SIGNAL current_address : std_logic_vector(15 DOWNTO 0) := (OTHERS => '0');
 
 	SIGNAL mask_index : INTEGER := 0;
 	SIGNAL index : UNSIGNED(7 DOWNTO 0) := (OTHERS => '0');
-
-    SIGNAL do_not_reenter : std_logic := '0';
+    SIGNAL stop_computing : std_logic := '0';
 
 BEGIN
 	state_transition : PROCESS (i_clk)
@@ -121,7 +122,7 @@ BEGIN
      
                     WHEN S5 =>
                         IF stop_computing = '1' THEN
-                            next_state <= S10;
+                            next_state <= S11;
                         ELSE
                             next_state <= S6;
                         END IF;
@@ -136,12 +137,15 @@ BEGIN
                         next_state <= S9;
                         
                     WHEN S9 =>
-                        next_state <= S4;
+                        next_state <= S10;
                     
                     WHEN S10 =>
-                        next_state <= S11;
+                        next_state <= S4;
                                      
                     WHEN S11 =>
+                        next_state <= S12;
+                    
+                    WHEN S12 =>
                         next_state <= RST;
                     
 			END CASE;
@@ -226,9 +230,13 @@ BEGIN
                   END IF;
                   
             WHEN S8 =>
-                  manhattan_distance <= temp_x_sum + temp_y_sum;
+                  temp_x_sum_nine_bit <= std_logic_vector(resize(unsigned(temp_x_sum), temp_x_sum_nine_bit'length));
+                  temp_y_sum_nine_bit <= std_logic_vector(resize(unsigned(temp_y_sum), temp_y_sum_nine_bit'length));
             
             WHEN S9 =>
+                manhattan_distance <= temp_x_sum_nine_bit + temp_y_sum_nine_bit;
+            
+            WHEN S10 =>
                   -- Entra solo se è stata ispezionata tutta la maschera
                     IF centroid_mask(mask_index) = '1' THEN
                         IF manhattan_distance < minimum_distance THEN
@@ -259,11 +267,11 @@ BEGIN
                         index <= shift_left(index, 1);
                      END IF;
                      
-            WHEN S10 =>
+            WHEN S11 =>
                 o_data <= std_logic_vector(output_mask);
                 o_done <= '1';
             
-            WHEN S11 =>
+            WHEN S12 =>
                 o_done <= '0';
                 o_en <= '0';
                 o_we <= '0';         
