@@ -25,15 +25,15 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY project_reti_logiche IS
 	PORT (
-		i_clk : IN STD_LOGIC; -- segnale di CLOCK generato dal testbench
-		i_start : IN STD_LOGIC; -- signale di START generato dal testbench
-		i_rst : IN STD_LOGIC; -- segnale di RESET generato dal testbench
-		i_data : IN STD_LOGIC_VECTOR(7 DOWNTO 0); -- vettore di bit letti da memoria
-		o_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0); -- vettore di bit
-		o_done : OUT STD_LOGIC; -- segnale di DONE indicante la fine della computazione
-		o_en : OUT STD_LOGIC; -- segnale di ENABLE per poter accedere (scrittura/lettura) alla memoria
-		o_we : OUT STD_LOGIC; -- segnale di WRITE_ENABLE per poter scrivere in memoria
-		o_data : OUT STD_LOGIC_VECTOR(7 DOWNTO 0) -- vettore di dati da scrivere in memoria
+		i_clk : IN STD_LOGIC;
+		i_start : IN STD_LOGIC;
+		i_rst : IN STD_LOGIC;
+		i_data : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+		o_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+		o_done : OUT STD_LOGIC;
+		o_en : OUT STD_LOGIC;
+		o_we : OUT STD_LOGIC;
+		o_data : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 END project_reti_logiche;
 
@@ -162,10 +162,8 @@ BEGIN
 			     
 			WHEN RST =>
 			     mask_index <= 0;
-			     -- Indirizzo di lettura X Punto
 			     o_address <= "0000000000010001";
 			     current_address <= "0000000000010001";
-			     -- Resetto variabili della computazione
 			     output_mask <= (OTHERS => '0');
 			     manhattan_distance <= (OTHERS => '0');
 			     minimum_distance <= (OTHERS => '1');
@@ -237,7 +235,6 @@ BEGIN
                 manhattan_distance <= temp_x_sum_nine_bit + temp_y_sum_nine_bit;
             
             WHEN S10 =>
-                  -- Entra solo se è stata ispezionata tutta la maschera
                     IF centroid_mask(mask_index) = '1' THEN
                         IF manhattan_distance < minimum_distance THEN
                             output_mask <= "00000000" OR index;
